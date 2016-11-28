@@ -1,0 +1,21 @@
+{
+  "name": "firestarter-notification-service",
+  "version": "1.0.0",
+  "description": "Listener for notification requests for the Firestarter app",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "sampsonjoliver",
+  "license": "ISC",
+  "engines": {
+    "node": ">=4.3.2"
+  },
+  "dependencies": {
+    "express": "^4.14.0",
+    "firebase-admin": "^4.0.3",
+    "http": "0.0.0",
+    "request": "^2.79.0"
+  }
+}
