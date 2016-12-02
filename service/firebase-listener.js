@@ -20,10 +20,13 @@ const listenForNotificationRequests = function() {
   var requests = ref.child('notificationRequests');
   requests.on('child_added', function(requestSnapshot) {
     var request = requestSnapshot.val();
+    if (request.sessionId == null || request.sessionId.length == 0) {
+      return
+    }
+
     sendNotificationToChannel(
       request.sessionId, 
-      request.message,
-      request.userImageUrl,
+      request,
       function() {
         requestSnapshot.ref.remove();
       }
@@ -33,7 +36,7 @@ const listenForNotificationRequests = function() {
   });
 };
 
-const sendNotificationToChannel = function(sessionId, message, userImageUrl, onSuccess) {
+const sendNotificationToChannel = function(sessionId, message, onSuccess) {
   console.log("Notifying channel " + sessionId);
   var sessionSubscribers = ref.child("sessionSubscriptions/" + sessionId);
 
@@ -43,7 +46,6 @@ const sendNotificationToChannel = function(sessionId, message, userImageUrl, onS
         sendNotificationToUser(
           childSnapshot.key, 
           message,
-          userImageUrl,
           onSuccess
         );
       }
@@ -51,22 +53,23 @@ const sendNotificationToChannel = function(sessionId, message, userImageUrl, onS
   })
 }
 
-const sendNotificationToUser = function(userId, message, userImageUrl, onSuccess) {
+const sendNotificationToUser = function(userId, message, onSuccess) {
   console.log("Notifying user " + userId);
   var userRef = ref.child("users/" + userId + "/instanceIds");
   userRef.once('value', function(instanceIdSnapshot) {
     instanceIdSnapshot.forEach(function(childSnapshot) {
-      sendNotificationToInstanceId(
-        childSnapshot.val(), 
-        message,
-        userImageUrl,
-        onSuccess
-      );
+      if (childSnapshot.val() === true) {
+        sendNotificationToInstanceId(
+          childSnapshot.key, 
+          message,
+          onSuccess
+        );
+      }
     })
   })
 }
 
-const sendNotificationToInstanceId = function(instanceId, message, userImageUrl, onSuccess) { 
+const sendNotificationToInstanceId = function(instanceId, message, onSuccess) { 
   console.log("Notifying instanceId " + instanceId);
   request({
     url: 'https://fcm.googleapis.com/fcm/send',
@@ -77,7 +80,9 @@ const sendNotificationToInstanceId = function(instanceId, message, userImageUrl,
     },
     body: JSON.stringify({
       notification: {
-        title: message
+        title: message.title,
+        body: message.message,
+        icon: message.userImageUrl
       },
       to : instanceId.toString()
     })
